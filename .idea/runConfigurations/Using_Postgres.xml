@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Using Postgres" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false">
+    <module name="go-and-databases" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="-dsn=postgresql://customuser:custompassword@localhost:15432/postgres?sslmode=disable&amp;fallback_application_name=postgrestest -port=8081" />
+    <kind value="PACKAGE" />
+    <package value="github.com/kohofinancial/go-and-databases" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
