@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"expvar"
-	_ "expvar"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kohofinancial/go-and-databases/services"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
@@ -23,13 +24,15 @@ type app struct {
 func main() {
 	var dsn string
 	var port string
-	var setLimits bool
+	var connLimits bool
+	var idleLimits bool
 	flag.StringVar(&dsn, "dsn", "", "PostgreSQL DSN")
 	flag.StringVar(&port, "port", "8080", "Service Port")
-	flag.BoolVar(&setLimits, "limits", false, "Sets DB limits")
+	flag.BoolVar(&connLimits, "conn-limits", false, "Sets DB limits")
+	flag.BoolVar(&idleLimits, "idle-limits", false, "Sets DB limits")
 	flag.Parse()
 
-	db, err := openDB(dsn, setLimits)
+	db, err := openDB(dsn, connLimits, idleLimits)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -59,15 +62,17 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
 
-func openDB(dsn string, setLimits bool) (*sql.DB, error) {
+func openDB(dsn string, connLimits bool, idleLimits bool) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if setLimits {
-		fmt.Println("setting limits")
+	if connLimits {
 		db.SetMaxOpenConns(5)
+	}
+
+	if idleLimits {
 		db.SetMaxIdleConns(5)
 	}
 
@@ -83,8 +88,14 @@ func openDB(dsn string, setLimits bool) (*sql.DB, error) {
 }
 
 func ReturnError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusBadRequest)
-	fmt.Println(err)
+	//Ideally the errors are handled lower than this but for a quick project this gave me what I needed.
+	if errors.Is(err, context.DeadlineExceeded) {
+		w.WriteHeader(http.StatusRequestTimeout)
+	} else if errors.Is(err, pq.Error{}) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	response := ErrorResponse{Error: err.Error()}
 	data, err := json.Marshal(response)
 	if err != nil {

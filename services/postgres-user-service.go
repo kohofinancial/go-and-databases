@@ -23,7 +23,7 @@ func (p *PostgresUserService) Get(id string) (*User, error) {
 
 	var user User
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := p.db.QueryRowContext(ctx, query, id).Scan(
@@ -46,7 +46,7 @@ func (p *PostgresUserService) Delete(id string) error {
         DELETE FROM users
         WHERE id = $1`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	result, err := p.db.ExecContext(ctx, query, id)
@@ -70,7 +70,7 @@ func (p *PostgresUserService) DeleteAll() error {
 	//goland:noinspection SqlWithoutWhere
 	query := `DELETE FROM users`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	result, err := p.db.ExecContext(ctx, query)
@@ -103,7 +103,7 @@ func (p *PostgresUserService) Update(user *User) error {
 		user.Occupation,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	err := p.db.QueryRowContext(ctx, query, args...).Scan(&user.UpdatedAt)
@@ -125,7 +125,7 @@ func (p *PostgresUserService) Create(user *User) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	return p.db.QueryRowContext(ctx, query, newV4.String(), user.Name, user.Occupation).
